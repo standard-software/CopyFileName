@@ -22,4 +22,4 @@ Call Include(".\Lib\st.vbs")
 Call Include(".\Common\CopyFilePathNameCommon.vbs")
 '--------------------------------------------------
 
-Call Main(Enum_CopyFilePath_FullPath)
+Call Main(Enum_CopyFilePathType_FullPath)

@@ -1,9 +1,9 @@
 Option Explicit
 
-Const Enum_CopyFilePath_FullPath = 1
-Const Enum_CopyFilePath_Name = 2
+Const Enum_CopyFilePathType_FullPath = 1
+Const Enum_CopyFilePathType_Name = 2
 
-Sub Main(ByVal CopyFilePath)
+Sub Main(ByVal CopyFilePathType)
 Do
     Dim Args: Set Args = WScript.Arguments
     
@@ -12,33 +12,76 @@ Do
         Exit Sub
     End If
     
-    Dim ArrayList1
-    Set ArrayList1 = CreateObject("System.Collections.ArrayList")
+    Dim FileArrayList
+    Set FileArrayList = CreateObject("System.Collections.ArrayList")
     
     Dim I
+
+    'ショートカットファイルが含まれているかどうかを検索
+    Dim ShortcutLinkFlag: ShortcutLinkFlag = False
     For I = 0 To Args.Count - 1
-        If fso.FileExists(Args(I)) Or fso.FolderExists(Args(I)) Then
-            Select Case CopyFilePath
-            Case Enum_CopyFilePath_FullPath:
-                Call ArrayList1.Add(Args(I))
-            Case Enum_CopyFilePath_Name:
-                Call ArrayList1.Add(fso.GetFileName(Args(I)))
-            End Select
+        If fso.FileExists(Args(I)) Then
+            If IsShortcutLinkFile(Args(I)) Then
+                ShortcutLinkFlag = True
+                Exit For
+            End If 
+        End If
+    Next
+
+    'ショートカットファイルを展開するかどうか決める
+    Dim ShortcutLinkSourceFlag: ShortcutLinkSourceFlag = False
+    If ShortcutLinkFlag Then
+        If vbYes = MsgBox( _
+            "ショートカットファイルのリンク先パスを取得しますか？", _
+            vbYesNo) Then
+            'Message:Get Path ShortcutFile Link Source ?
+            ShortcutLinkSourceFlag = True
+        End If
+    End If
+
+    For I = 0 To Args.Count - 1
+        If fso.FileExists(Args(I)) Then
+            If ShortcutLinkSourceFlag _
+            And IsShortcutLinkFile(Args(I)) Then
+                Call FileArrayList.Add( _
+                    PathConvert(CopyFilePathType, _
+                    ShortcutFileLinkPath(Args(I))))
+            Else
+                Call FileArrayList.Add( _
+                    PathConvert(CopyFilePathType, Args(I)))
+            End If
+        ElseIf fso.FolderExists(Args(I)) Then
+            Call FileArrayList.Add( _
+                PathConvert(Args(I)))
         End If
     Next
 
     'ソート
-    Call ArrayList1.Sort
+    Call FileArrayList.Sort
 
     Dim CopyText: CopyText = ""
-    For I = 0  To ArrayList1.Count - 1
-        CopyText = CopyText + ArrayList1(I) + vbCrLf
+    For I = 0  To FileArrayList.Count - 1
+        CopyText = CopyText + FileArrayList(I) + vbCrLf
     Next
 
     Call SetClipboardText(CopyText)
     
-    Call WScript.Echo("Copy Text To Clipboard." + vbCrLf + CopyText)
+    Call WScript.Echo( _
+        "クリップボードにファイル名をコピーしました。" _
+         + vbCrLf + CopyText)
+        'Message:Copy Text To Clipboard.
+
 Loop While False
 End Sub
 
+Private Function PathConvert(ByVal CopyFilePathType, ByVal FilePath)
+    Dim Result: Result = ""
+    Select Case CopyFilePathType
+    Case Enum_CopyFilePathType_FullPath:
+        Result = FilePath
+    Case Enum_CopyFilePathType_Name:
+        Result = fso.GetFileName(FilePath)
+    End Select
+    PathConvert = Result
+End Function
 
