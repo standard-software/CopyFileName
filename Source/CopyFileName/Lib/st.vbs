@@ -13,7 +13,7 @@
 '   Name:       Standard Software
 '   URL:        http://standard-software.net/
 '--------------------------------------------------
-'Version:       2015/08/07
+'Version:       2015/08/25
 '--------------------------------------------------
 
 '--------------------------------------------------
@@ -1777,11 +1777,132 @@ Public Function CurrentDirectory
 End Function
 
 '----------------------------------------
-'・スクリプトフォルダの取得
+'・スクリプトファイルパスの取得
+'----------------------------------------
+Public Function ScriptFilePath
+    ScriptFilePath = _
+        WScript.ScriptFullName
+End Function
+
+'----------------------------------------
+'・スクリプトフォルダパスの取得
 '----------------------------------------
 Public Function ScriptFolderPath
     ScriptFolderPath = _
         fso.GetParentFolderName(WScript.ScriptFullName)
+End Function
+
+'----------------------------------------
+'・スクリプトプログラムパスの取得
+'----------------------------------------
+Public Function ScriptProgramFilePath
+    ScriptProgramFilePath = _
+        fso.BuildPath(WScript.Path, "wscript.exe")
+End Function
+
+'----------------------------------------
+'・デスクトップフォルダの取得
+'----------------------------------------
+Public Function DesktopFolderPath
+    DesktopFolderPath = _
+        Shell.SpecialFolders("Desktop")
+End Function
+
+Public Function DesktopAllUsersFolderPath
+    DesktopAllUsersFolderPath = _
+        Shell.SpecialFolders("AllUsersDesktop")
+End Function
+
+'----------------------------------------
+'・スタートメニューフォルダの取得
+'----------------------------------------
+
+'----------------------------------------
+'   ・  Win7:   C:\Users\<UserName>\AppData\Roaming\Microsoft\Windows\Start Menu
+'----------------------------------------
+Public Function StartMenuFolderPath
+    StartMenuFolderPath = _
+        Shell.SpecialFolders("StartMenu")
+End Function
+
+'----------------------------------------
+'   ・  Win7:   C:\ProgramData\Microsoft\Windows\Start Menu
+'----------------------------------------
+Public Function StartMenuAllUsersFolderPath
+    StartMenuAllUsersFolderPath = _
+        Shell.SpecialFolders("AllUsersStartMenu")
+End Function
+
+'----------------------------------------
+'   ・  Win7:   C:\Users\<UserName>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs
+'----------------------------------------
+Public Function StartMenuProgramsFolderPath
+    StartMenuProgramsFolderPath = _
+        Shell.SpecialFolders("Programs")
+End Function
+
+'----------------------------------------
+'   ・  Win7:   C:\ProgramData\Microsoft\Windows\Start Menu\Programs
+'----------------------------------------
+Public Function StartMenuProgramsAllUsersFolderPath
+    StartMenuProgramsAllUsersFolderPath = _
+        Shell.SpecialFolders("AllUsersPrograms")
+End Function
+
+'----------------------------------------
+'   ・  Win7:   C:\Users\<UserName>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+'----------------------------------------
+Public Function StartUpFolderPath
+    StartUpFolderPath = _
+        Shell.SpecialFolders("Startup")
+End Function
+
+'----------------------------------------
+'   ・  Win7:   C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+'----------------------------------------
+Public Function StartUpAllUsersFolderPath
+    StartUpAllUsersFolderPath = _
+        Shell.SpecialFolders("AllUsersStartup")
+End Function
+
+'----------------------------------------
+'・送るフォルダの取得
+'----------------------------------------
+'   ・  Win7:   C:\Users\<UserName>\AppData\Roaming\Microsoft\Windows\SendTo
+'----------------------------------------
+Public Function SendToFolderPath
+    SendToFolderPath = _
+        Shell.SpecialFolders("SendTo")
+End Function
+
+'----------------------------------------
+'・マイドキュメントフォルダの取得
+'----------------------------------------
+'   ・  Win7:   
+'----------------------------------------
+Public Function MyDocumentsFolderPath
+    MyDocumentsFolderPath = _
+        Shell.SpecialFolders("MyDocuments")
+End Function
+
+'----------------------------------------
+'・AppDataフォルダの取得
+'----------------------------------------
+'   ・  Win7:   C:\Users\<UserName>\AppData\Roaming
+'----------------------------------------
+Public Function AppdDataFolderPath
+    AppdDataFolderPath = _
+        Shell.SpecialFolders("Appdata")
+End Function
+
+'----------------------------------------
+'・ProgramDataフォルダの取得
+'----------------------------------------
+'   ・  Win7:   C:\ProgramData
+'----------------------------------------
+Public Function ProgramDataFolderPath
+    ProgramDataFolderPath = _
+        EnvironmentalVariables("ProgramData")
 End Function
 
 '----------------------------------------
@@ -2399,12 +2520,13 @@ Function IsUseFile(FilePath)
 End Function
 
 '----------------------------------------
-'・ファイルが読み取り専用かどうか確認する
+'・ファイルが読取専用かどうか確認する
 '----------------------------------------
 Function IsReadOnlyFile(FilePath)
     Dim Result: Result = False
     Do
-        If fso.FileExists(FilePath) Then Exit Do
+        If Not fso.FileExists(FilePath) Then Exit Do
+
         '読み取り属性調査は定数1とのAndで判定する
         If fso.GetFile(FilePath).Attributes And 1 Then
             Result = True
@@ -2412,6 +2534,23 @@ Function IsReadOnlyFile(FilePath)
     Loop While False
     IsReadOnlyFile = Result
 End Function
+
+'----------------------------------------
+'・ファイルに読取専用属性をセットする。
+'----------------------------------------
+Sub SetReadOnlyFile(ByVal FilePath, ByVal Value)
+    Do
+        If not fso.FileExists(FilePath) Then Exit Do
+
+        Dim File: Set File = fso.GetFile(FilePath)
+        If Value Then
+            File.Attributes = File.Attributes Or 1
+        Else
+            File.Attributes = File.Attributes And (Not 1)
+        End If
+    Loop While False
+End Sub
+
 
 
 '----------------------------------------
@@ -2465,6 +2604,54 @@ Public Function ShortcutFileLinkPath(ByVal ShortcutFilePath)
     ShortcutFileLinkPath = Result
 End Function
 
+'----------------------------------------
+'・ショートカットファイルの作成
+'----------------------------------------
+'   ・  IconLocation は "ファイルパス,0"という形式で指定する
+'   ・  IconLocationを設定したくない場合は
+'       IconLocation = -1 にする
+'----------------------------------------
+Public Sub CreateShortcutFile( _
+ByVal ShortcutFilePath, _
+ByVal TargetFilePath, _
+ByVal IconFilePath, ByVal IconIndex, _
+ByVal Description)
+
+    Call Assert(fso.FolderExists( _
+        fso.GetParentFolderName(ShortcutFilePath)), _
+        "No Exists ShortcutFileFolder")
+
+    Call Assert(fso.FileExists( _
+        TargetFilePath), _
+        "No Exists ShortcutTargetFile")
+
+    Dim IconLocationStr: IconLocationStr = ""
+    If IconFilePath = "" Then
+        IconLocationStr = -1
+    ElseIf fso.FileExists(IconFilePath) = False Then
+        IconLocationStr = -1
+    Else
+        If IsLong(IconIndex) Then
+            If IconIndex >= 0 Then
+                IconLocationStr = IconFilePath + "," + CStr(IconIndex)
+            Else
+                IconLocationStr = IconFilePath + ",0"
+            End If
+        Else
+            IconLocationStr = IconFilePath + ",0"
+        End If
+    End If
+
+    Dim ShortcutFile
+    Set ShortcutFile = Shell.CreateShortcut(ShortcutFilePath)
+    ShortcutFile.TargetPath = TargetFilePath
+    ShortcutFile.Description = Description
+    ShortcutFile.IconLocation = IconLocationStr
+    ShortcutFile.RelativePath = ""
+    ShortcutFile.WorkingDirectory = ""
+    ShortcutFile.Hotkey = ""
+    ShortcutFile.Save
+End Sub
 
 '----------------------------------------
 '◆テキストファイル読み書き
@@ -3037,13 +3224,14 @@ Const vbMinimizedNoFocus = 6 '最小化起動、フォーカスなし
 '・ファイル指定したシェル起動
 '----------------------------------------
 Public Sub ShellFileOpen( _
-ByVal FilePath, ByVal Focus)
+ByVal FilePath, ByVal Focus, ByVal Wait)
     Call Assert(OrValue(Focus, Array(0, 1, 2, 3, 4, 6)), "Error:ShellFileOpen")
+    Call Assert(OrValue(Wait, Array(True, False)), "Error:ShellFileOpen")
 
     Call Shell.Run( _
         "rundll32.exe url.dll" & _
         ",FileProtocolHandler " + FilePath _
-        , Focus, False)
+        , Focus, Wait)
     'ファイル起動の場合
     '第三引数のWaitはTrueにしても無視される様子
 End Sub
@@ -3052,8 +3240,8 @@ Private Sub testShellFileOpen
     Dim Path: Path = PathCombine(Array( _
             ScriptFolderPath, _
             "Test\TestShellRun\TestShellRun.txt"))
-    Call ShellFileOpen(Path, vbNormalFocus)
-    Call ShellFileOpen(Path, vbNormalFocus)
+    Call ShellFileOpen(Path, vbNormalFocus, True)
+    Call ShellFileOpen(Path, vbNormalFocus, True)
 End Sub
 
 '----------------------------------------
@@ -3476,4 +3664,11 @@ End Sub
 '◇ ver 2015/08/07
 '・ IsShortcutLinkFileを作成
 '   ShortcutFileLinkPathを修正
+'◇ ver 2015/08/24
+'・ CreateShortcutFileを追加
+'・ 特殊フォルダパス取得関数の追加Desktop/StartMenu/Startup/SendToなど
+'◇ ver 2015/08/25
+'・ ShellFileOpen修正 Wait引数追加
+'・ SetReadOnlyFile追加
+'   IsReadOnlyFile 修正
 '--------------------------------------------------

@@ -12,7 +12,7 @@ CopyFileName.vbs と CopyFilePath.vbs は
 
 ◆使い方
 
-CopyFileName.vbs かのアイコンに
+CopyFileName.vbs のアイコンに
 複数のファイルもしくはフォルダをドラッグ＆ドロップすると
 ファイル名をソートして一覧でクリップボードに出力します。
 
