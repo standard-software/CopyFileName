@@ -5,13 +5,22 @@ Const Enum_CopyFilePathType_Name = 2
 
 Sub Main(ByVal CopyFilePathType)
 Do
-    Dim Args: Set Args = WScript.Arguments
-    
-    If Args.Count = 0 Then
+    Dim ArgsArray
+    ArgsArray = ArgsToArray
+
+    '動作確認用コード
+    'ArgsArray = Array( _
+    '    fso.BuildPath(ScriptFolderPath, "CopyFileName.vbs"), _
+    '    fso.BuildPath(ScriptFolderPath, "CopyFilePath.vbs"))
+
+    'MsgBox ArrayToString(ArgsArray, " ")
+    'Exit Sub
+
+    If ArrayCount(ArgsArray) = 0 Then
         Call WScript.Echo("Args.Count = 0")
         Exit Sub
     End If
-    
+
     Dim FileArrayList
     Set FileArrayList = CreateObject("System.Collections.ArrayList")
     
@@ -19,9 +28,9 @@ Do
 
     'ショートカットファイルが含まれているかどうかを検索
     Dim ShortcutLinkFlag: ShortcutLinkFlag = False
-    For I = 0 To Args.Count - 1
-        If fso.FileExists(Args(I)) Then
-            If IsShortcutLinkFile(Args(I)) Then
+    For I = 0 To ArrayCount(ArgsArray) - 1
+        If fso.FileExists(ArgsArray(I)) Then
+            If IsShortcutLinkFile(ArgsArray(I)) Then
                 ShortcutLinkFlag = True
                 Exit For
             End If 
@@ -39,20 +48,20 @@ Do
         End If
     End If
 
-    For I = 0 To Args.Count - 1
-        If fso.FileExists(Args(I)) Then
+    For I = 0 To ArrayCount(ArgsArray) - 1
+        If fso.FileExists(ArgsArray(I)) Then
             If ShortcutLinkSourceFlag _
-            And IsShortcutLinkFile(Args(I)) Then
+            And IsShortcutLinkFile(ArgsArray(I)) Then
                 Call FileArrayList.Add( _
                     PathConvert(CopyFilePathType, _
-                    ShortcutFileLinkPath(Args(I))))
+                    ShortcutFileLinkPath(ArgsArray(I))))
             Else
                 Call FileArrayList.Add( _
-                    PathConvert(CopyFilePathType, Args(I)))
+                    PathConvert(CopyFilePathType, ArgsArray(I)))
             End If
-        ElseIf fso.FolderExists(Args(I)) Then
+        ElseIf fso.FolderExists(ArgsArray(I)) Then
             Call FileArrayList.Add( _
-                PathConvert(Args(I)))
+                PathConvert(ArgsArray(I)))
         End If
     Next
 

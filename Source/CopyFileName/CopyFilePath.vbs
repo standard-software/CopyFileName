@@ -2,7 +2,7 @@
 'CopyFileName
 'ModuleName:    CopyFileName.vbs
 '--------------------------------------------------
-'Version:       2015/05/17
+'Version:       2015/11/05
 '--------------------------------------------------
 Option Explicit
 
