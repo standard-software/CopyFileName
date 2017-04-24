@@ -61,7 +61,7 @@ Do
             End If
         ElseIf fso.FolderExists(ArgsArray(I)) Then
             Call FileArrayList.Add( _
-                PathConvert(ArgsArray(I)))
+                PathConvert(CopyFilePathType, ArgsArray(I)))
         End If
     Next
 

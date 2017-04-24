@@ -13,7 +13,7 @@
 '   Name:       Standard Software
 '   URL:        http://standard-software.net/
 '--------------------------------------------------
-'Version:       2015/09/01
+'Version:       2016/05/05
 '--------------------------------------------------
 
 '--------------------------------------------------
@@ -75,6 +75,7 @@ Public Sub test
 '    Call testIsLastStr()
 '    Call testIncludeLastStr()
 '    Call testExcludeLastStr()
+
 '    Call testTrimFirstStrs
 '    Call testTrimLastStrs
     Call testStringCombine
@@ -378,7 +379,7 @@ End Function
 '----------------------------------------
 
 '----------------------------------------
-'・IsInclude
+'・IsIncludeStr
 '----------------------------------------
 Public Function IsIncludeStr(ByVal Str, ByVal SubStr)
     IsIncludeStr = _
@@ -1130,6 +1131,19 @@ Public Function FormatYYYY_MM_DD(ByVal DateValue, ByVal Delimiter)
     FormatYYYY_MM_DD = Result
 End Function
 
+Public Function FormatYYYY_MM(ByVal DateValue, ByVal Delimiter)
+    Dim Result: Result = ""
+    Do
+        If IsDate(DateValue) = False Then Exit Do
+
+        Result = _
+            Year(DateValue) & _
+            Delimiter & _
+            Right("0" & Month(DateValue), 2)
+    Loop While False
+    FormatYYYY_MM = Result
+End Function
+
 '----------------------------------------
 '・時刻書式
 '----------------------------------------
@@ -1153,6 +1167,19 @@ Public Function FormatHH_MM_SS(ByVal TimeValue, ByVal Delimiter)
             Right("0" & Minute(TimeValue) , 2) & _
             Delimiter & _
             Right("0" & Second(TimeValue) , 2)
+    Loop While False
+    FormatHH_MM_SS = Result
+End Function
+
+Public Function FormatHH_MM(ByVal TimeValue, ByVal Delimiter)
+    Dim Result: Result = ""
+    Do
+        If IsDate(TimeValue) = False Then Exit Do
+
+        Result = _
+            Right("0" & Hour(TimeValue) , 2) & _
+            Delimiter & _
+            Right("0" & Minute(TimeValue) , 2)
     Loop While False
     FormatHH_MM_SS = Result
 End Function
@@ -2150,7 +2177,7 @@ End Sub
 '   ・  
 '----------------------------------------
 Sub MoveFolderOverWrite(ByVal SourceFolderPath, ByVal DestFolderPath)
-    Call fso.CopyFolder(SourceFolderPath, DestFolderPath, True)
+    Call CopyFolder(SourceFolderPath, DestFolderPath)
     Call ForceDeleteFolder(SourceFolderPath)
 End Sub
 
@@ -3072,12 +3099,12 @@ End Function
 
 Function IsCUI
     IsCui = _
-        IsFirstStr(LCase(WScript.FullName), "cscript.exe")
+        IsIncludeStr(LCase(WScript.FullName), "cscript.exe")
 End Function
 
 Function IsGUI
-    IsCui = _
-        IsFirstStr(LCase(WScript.FullName), "wscript.exe")
+    IsGUI = _
+        IsIncludeStr(LCase(WScript.FullName), "wscript.exe")
 End Function
 
 '----------------------------------------
@@ -3692,4 +3719,9 @@ End Sub
 '   IsReadOnlyFile 修正
 '◇ ver 2015/09/01
 '・ FolderHasSubItem
+'◇ ver 2015/11/06
+'・ FormatYYYY_MM/FormatHH_MM 追加
+'・ MoveFolderOverWriteの若干の修正
+'◇ ver 2016/05/05
+'・ IsCUI/IsGUI 不具合修正
 '--------------------------------------------------
